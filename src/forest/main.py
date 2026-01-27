@@ -34,4 +34,4 @@ def main() -> None:
     args = parser.parse_args()
 
     ## Lancement de la simulation ##
-    start_simulation()
+    start_simulation() # A RAJOUTER PLUS TARD : passer les arguments à la fonction (mettre args en paramètre )
