@@ -1,4 +1,4 @@
-## CLASSE DE LA GRILLE ##
+## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
     
     def __init__(self):
