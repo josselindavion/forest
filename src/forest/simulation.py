@@ -27,7 +27,17 @@ class Grid:
     
     ## Sauvegarder le contenu de la grille finale dans un fichier ##
     def save_to_file(self, filename):
-        pass
+        with open(filename, 'w') as file:
+            for y in range(self.__height):
+                line = ''
+                for x in range(self.__width):
+                    if (x, y) in self.__burning_trees:
+                        line += '*'  # On concatène l'arbre en feu
+                    elif (x, y) in self.__alive_trees:
+                        line += 'o'  # On concatène l'arbre vivant
+                    else:
+                        line += ' '  # On concatène une case vide
+                file.write(line + '\n')
 
     ## Calculer la prochaine génération de la grille ##
     def evolve(self):
