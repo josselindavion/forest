@@ -2,7 +2,7 @@
 import argparse
 
 ## IMPORTATIONS INTERNES ##
-from simulation import start_simulation
+from simulation.py import start_simulation
 
 ## FONCTION PRINCIPALE ##
 def main() -> None:
