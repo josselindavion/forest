@@ -2,7 +2,7 @@
 import argparse
 
 ## IMPORTATIONS INTERNES ##
-from simulation import start_simulation
+from .simulation import start_simulation
 
 ## FONCTION PRINCIPALE ##
 def main() -> None:
@@ -34,4 +34,4 @@ def main() -> None:
     args = parser.parse_args()
 
     ## Lancement de la simulation ##
-    start_simulation(args)
+    start_simulation()
