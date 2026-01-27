@@ -10,8 +10,21 @@ class Grid:
 
     ## Lire le contenu initial de la grille depuis un fichier ##
     def load_from_file(self, filename):
-        pass
+        
+        ## Nettoyage des sets ##
+        self.__burning_trees.clear()
+        self.__alive_trees.clear()
 
+        ## Lecture du fichier ##
+        with open(filename, 'r') as file:
+            for y, line in enumerate(file):
+                for x, char in enumerate(line.rstrip('\n')):
+                    if x < self.__width and y < self.__height: # On vérifie qu'on ne dépasse pas les dimensions
+                        if char == 'o':  # On considère 'o' comme un arbre vivant
+                            self.__alive_trees.add((x, y)) # On ajoute l'arbre vivant au set
+                        elif char == '*':  # On considère '*' comme un arbre en feu
+                            self.__burning_trees.add((x, y)) # On ajoute l'arbre en feu au set
+    
     ## Sauvegarder le contenu de la grille finale dans un fichier ##
     def save_to_file(self, filename):
         pass
