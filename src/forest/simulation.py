@@ -1,8 +1,12 @@
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
-    
-    def __init__(self):
-        pass
+
+    ## Initialisation de la grille ##
+    def __init__(self, height, width):
+        self.__burning_trees = set()    # On va stocker les arbres en feu dans un set
+        self.__alive_trees = set()      # On va stocker les arbres vivants dans un set
+        self.__height = height
+        self.__width = width
 
     ## Lire le contenu initial de la grille depuis un fichier ##
     def load_from_file(self, filename):
