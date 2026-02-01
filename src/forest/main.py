@@ -69,7 +69,7 @@ def main() -> None:
     parser.add_argument('-t', '--nbtrees', type=int, default=100)
     parser.add_argument('-s', '--start-grid-output', type=str, default='start_grid.txt')
     parser.add_argument('-o', '--output', type=str, default='final_grid.txt')
-    parser.add_argument('-f', '--fire-probability', type=float, default=0.01)
+    parser.add_argument('-f', '--fire-probability', type=float, default=0.001)
     parser.add_argument('-p', '--tree-probability', type=float, default=0.05)
     
     # J'ai réduit la taille par défaut de la grille à 30 pour que les tuiles soient GROSSES et belles
