@@ -2,7 +2,7 @@
 import argparse
 
 ## IMPORTATIONS INTERNES ##
-from .simulation import Grid
+from simulation import Grid
 
 def start_simulation(args):
     grid = Grid(args[5],args[5],args) # Initialisation de la grille carrée
