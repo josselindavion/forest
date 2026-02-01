@@ -7,7 +7,8 @@ class Grid:
     ## Initialisation de la grille ##
     def __init__(self, height, width):
         self.__burning_trees = set()    # On va stocker les arbres en feu dans un set
-        self.__alive_trees = set()      # On va stocker les arbres vivants dans un set
+        self.__alive_trees = set()  
+        self.__no_trees = set()    # On va stocker les cases vides dans un set
         self.__height = height
         self.__width = width
 
@@ -17,7 +18,7 @@ class Grid:
         ## Nettoyage des sets ##
         self.__burning_trees.clear()
         self.__alive_trees.clear()
-
+        self.__no_trees.clear()
         ## Lecture du fichier ##
         with open(filename, 'r') as file:
             for y, line in enumerate(file):
@@ -27,6 +28,8 @@ class Grid:
                             self.__alive_trees.add((x, y)) # On ajoute l'arbre vivant au set
                         elif char == '*':  # On considère '*' comme un arbre en feu
                             self.__burning_trees.add((x, y)) # On ajoute l'arbre en feu au set
+                        else:  # On considère tout autre caractère comme une case vide
+                            self.__no_trees.add((x, y)) # On ajoute la case vide au set
     
     ## Sauvegarder le contenu de la grille finale dans un fichier ##
     def save_to_file(self, filename):
@@ -44,35 +47,42 @@ class Grid:
 
     ## Calculer la prochaine génération de la grille ##
     def evolve(self):
-        pass
+        new_burning_trees = set() # On crée un nouveau set pour les arbres en feu de la prochaine génération
+        new_alive_trees = set()
+        new_no_trees = set()    # On crée un nouveau set pour les cases vides de la prochaine génération
 
+        ## Pousse aléatoire des arbres dans les cases vides ##
+        for (x, y) in self.__no_trees:
+            if random.random() < args[4]:  # PROBA_GROW
+                new_alive_trees.add((x, y))
+            else:
+                new_no_trees.add((x, y))
+        
+        ## Enflammer aléatoirement les arbres vivants ##
+        for (x, y) in self.__alive_trees:
+            if random.random() < args[3]:  # PROBA_FIRE
+                new_burning_trees.add((x, y))
+            else:
+                new_alive_trees.add((x, y))
+        
+        ## Propagation du feu aux arbres voisins ##
+        for (x, y) in self.__burning_trees:
+            ## L'arbre en feu brule et disparait ##
+            new_no_trees.add((x, y))
+            ## On parcourt les voisins et on enflamme les arbres adjacents qui sont étains vivants ##
+            for dx in [-1, 0, 1]:
+                for dy in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue
+                    neighbor = (x + dx, y + dy)
+                    if neighbor in self.__alive_trees:
+                        new_burning_trees.add(neighbor)
+        
+        ## Mise à jour des sets ##
+        self.__burning_trees = new_burning_trees
+        self.__alive_trees = new_alive_trees
+        self.__no_trees = new_no_trees
 
-## CLASSE DE L'ARBRE ##
-class Tree :
-
-    ## Initialisation de l'arbre ##
-    def __init__(self, x: int, y: int, state: str):
-        self.__x = x
-        self.__y = y
-        self.__state = state  # 'alive', 'burning', 'burned'
-    
-    ## On fait brûler l'arbre ##
-    def burn(self):
-        self.__state = 'burning'
-    
-    ## On éteint l'arbre ##
-    def extinguish(self):
-        self.__state = 'burned'
-    
-    ## On fait pousser l'arbre avec une proba PROBA_GROW##
-    def grow(self):
-        if random.random() < args[4]:
-            self.__state = 'alive'
-    
-    ## On fait brûler l'arbre avec une proba PROBA_FIRE ##
-    def burn_randomly(self):
-        if random.random() < args[3]:
-            self.burn()
 
 ## FONCTION DE SIMULATION ##
 def start_simulation():
