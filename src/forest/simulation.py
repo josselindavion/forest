@@ -5,7 +5,7 @@ import random
 class Grid:
 
     ## Initialisation de la grille ##
-    def __init__(self, height, width):
+    def __init__(self, height, width, args):
         self.__burning_trees = set()    # On va stocker les arbres en feu dans un set
         self.__alive_trees = set()  
         self.__no_trees = set()    # On va stocker les cases vides dans un set
@@ -34,7 +34,7 @@ class Grid:
                 file.write(line + '\n')
 
     ## Calculer la prochaine génération de la grille ##
-    def evolve(self):
+    def evolve(self,args):
         new_burning_trees = set() # On crée un nouveau set pour les arbres en feu de la prochaine génération
         new_alive_trees = set()
         new_no_trees = set()    # On crée un nouveau set pour les cases vides de la prochaine génération

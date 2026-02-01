@@ -5,11 +5,11 @@ import argparse
 from .simulation import Grid
 
 def start_simulation(args):
-    grid = Grid(args[5],args[5])
+    grid = Grid(args[5],args[5],args) # Initialisation de la grille carrée
     grid.save_to_file(args[1])  # Sauvegarde de la grille initiale
     print(f"Lancement de la simulation pour {args[7]} étapes...")
     for i in range(args[7]):
-        grid.evolve()
+        grid.evolve(args)
     grid.save_to_file(args[2])  # Sauvegarde de la grille finale
     print(f"Sauvegarde du résultat dans : {args[2]}")
 
