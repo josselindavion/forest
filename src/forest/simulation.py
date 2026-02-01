@@ -78,7 +78,7 @@ class Grid:
                     if neighbor in self.__alive_trees:
                         new_burning_trees.add(neighbor)
         
-        ## Mise à jour des sets ##
+        ## Mise à jour ##
         self.__burning_trees = new_burning_trees
         self.__alive_trees = new_alive_trees
         self.__no_trees = new_no_trees
