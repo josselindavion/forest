@@ -2,10 +2,12 @@
 import argparse
 
 ## IMPORTATIONS INTERNES ##
-from .simulation import start_simulation
+from .simulation import Grid
 
-def start_simulation():
-    pass
+def start_simulation(args):
+    grid = Grid(args[5],args[5])
+    grid.load_from_file(args[1])
+
 
 
 ## FONCTION PRINCIPALE ##
@@ -38,4 +40,4 @@ def main() -> None:
     args = parser.parse_args()
 
     ## Lancement de la simulation ##
-    start_simulation() # A RAJOUTER PLUS TARD : passer les arguments à la fonction (mettre args en paramètre )
+    start_simulation(args) # A RAJOUTER PLUS TARD : passer les arguments à la fonction (mettre args en paramètre )
