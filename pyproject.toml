@@ -7,7 +7,9 @@ authors = [
     { name = "Josselin Davion Jouffre", email = "josselin.davion--jouffre@etu.minesparis.psl.eu" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "pygame>=2.6.1",
+]
 
 [project.scripts]
 forest = "forest.main:main"
