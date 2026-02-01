@@ -1,3 +1,6 @@
+## IMPORTATIONS NECESSAIRES ##
+import random
+
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
 
@@ -42,6 +45,34 @@ class Grid:
     ## Calculer la prochaine génération de la grille ##
     def evolve(self):
         pass
+
+
+## CLASSE DE L'ARBRE ##
+class Tree :
+
+    ## Initialisation de l'arbre ##
+    def __init__(self, x: int, y: int, state: str):
+        self.__x = x
+        self.__y = y
+        self.__state = state  # 'alive', 'burning', 'burned'
+    
+    ## On fait brûler l'arbre ##
+    def burn(self):
+        self.__state = 'burning'
+    
+    ## On éteint l'arbre ##
+    def extinguish(self):
+        self.__state = 'burned'
+    
+    ## On fait pousser l'arbre avec une proba PROBA_GROW##
+    def grow(self):
+        if random.random() < PROBA_GROW:
+            self.__state = 'alive'
+    
+    ## On fait brûler l'arbre avec une proba PROBA_FIRE ##
+    def burn_randomly(self):
+        if random.random() < PROBA_FIRE:
+            self.burn()
 
 ## FONCTION DE SIMULATION ##
 def start_simulation():
