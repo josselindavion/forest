@@ -66,12 +66,12 @@ class Tree :
     
     ## On fait pousser l'arbre avec une proba PROBA_GROW##
     def grow(self):
-        if random.random() < PROBA_GROW:
+        if random.random() < args[4]:
             self.__state = 'alive'
     
     ## On fait brûler l'arbre avec une proba PROBA_FIRE ##
     def burn_randomly(self):
-        if random.random() < PROBA_FIRE:
+        if random.random() < args[3]:
             self.burn()
 
 ## FONCTION DE SIMULATION ##
