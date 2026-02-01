@@ -2,10 +2,17 @@
 import argparse
 
 ## IMPORTATIONS INTERNES ##
-from .simulation import start_simulation
+from .simulation import Grid
 
-def start_simulation():
-    pass
+def start_simulation(args):
+    grid = Grid(args.grid_size,args.grid_size,args) # Initialisation de la grille carrée
+    grid.save_to_file(args.start_grid_output)  # Sauvegarde de la grille initiale
+    print(f"Lancement de la simulation pour {args.nb_steps} étapes...")
+    for i in range(args.nb_steps):
+        grid.evolve(args)
+    grid.save_to_file(args.output)  # Sauvegarde de la grille finale
+    print(f"Sauvegarde du résultat dans : {args.output}")
+
 
 
 ## FONCTION PRINCIPALE ##
@@ -38,4 +45,4 @@ def main() -> None:
     args = parser.parse_args()
 
     ## Lancement de la simulation ##
-    start_simulation() # A RAJOUTER PLUS TARD : passer les arguments à la fonction (mettre args en paramètre )
+    start_simulation(args) # A RAJOUTER PLUS TARD : passer les arguments à la fonction (mettre args en paramètre )
