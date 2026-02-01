@@ -12,7 +12,7 @@ class Grid:
         self.__height = height
         self.__width = width
         ## Initialisation de la grille avec des arbres vivants (nombre args[0]) et des cases vides aléatoires ##
-        tree_number = args[0]
+        tree_number = args.nbtrees
         while len(self.__alive_trees) < tree_number:
             x = random.randint(0, width - 1)
             y = random.randint(0, height - 1)
@@ -41,14 +41,14 @@ class Grid:
 
         ## Pousse aléatoire des arbres dans les cases vides ##
         for (x, y) in self.__no_trees:
-            if random.random() < args[4]:  # PROBA_GROW
+            if random.random() < args.tree_probability:  # PROBA_GROW
                 new_alive_trees.add((x, y))
             else:
                 new_no_trees.add((x, y))
         
         ## Enflammer aléatoirement les arbres vivants ##
         for (x, y) in self.__alive_trees:
-            if random.random() < args[3]:  # PROBA_FIRE
+            if random.random() < args.fire_probability:  # PROBA_FIRE
                 new_burning_trees.add((x, y))
             else:
                 new_alive_trees.add((x, y))
