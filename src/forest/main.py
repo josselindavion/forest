@@ -4,6 +4,10 @@ import argparse
 ## IMPORTATIONS INTERNES ##
 from .simulation import start_simulation
 
+def start_simulation():
+    pass
+
+
 ## FONCTION PRINCIPALE ##
 def main() -> None:
     
