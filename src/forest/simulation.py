@@ -82,8 +82,3 @@ class Grid:
         self.__burning_trees = new_burning_trees
         self.__alive_trees = new_alive_trees
         self.__no_trees = new_no_trees
-
-
-## FONCTION DE SIMULATION ##
-def start_simulation():
-    print("Simulation started.")
