@@ -1,6 +1,7 @@
 ## IMPORTATIONS NECESSAIRES ##
 import random
 import pygame
+import logging
 
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
@@ -12,17 +13,17 @@ class Grid:
         self.__height = height
         self.__width = width
         
-        # Dictionnaire pour stocker une variation de couleur par arbre (pour que ce soit moins monotone)
+        ## Dictionnaire pour stocker une variation de couleur par arbre (pour que ce soit moins monotone) ##
         self.__tree_shades = {} 
         
-        # Initialisation de la grille
+        ## Initialisation de la grille ##
         tree_number = args.nbtrees
         while len(self.__alive_trees) < tree_number:
             x = random.randint(0, width - 1)
             y = random.randint(0, height - 1)
-            self.add_tree(x, y) # Utilisation d'une méthode helper
+            self.add_tree(x, y)
         
-        # Remplir le set des cases vides
+        ## Remplir le set des cases vides ##
         for y in range(height):
             for x in range(width):
                 if (x, y) not in self.__alive_trees:
@@ -30,7 +31,7 @@ class Grid:
 
     def add_tree(self, x, y):
         self.__alive_trees.add((x, y))
-        # On assigne une nuance de vert aléatoire à cet arbre (entre 0 et 3)
+        ## On assigne une nuance de vert aléatoire à cet arbre (entre 0 et 3) ##
         self.__tree_shades[(x, y)] = random.randint(0, 2)
 
     def save_to_file(self, filename):
@@ -67,16 +68,16 @@ class Grid:
         
         screen.fill(BG_COLOR)
 
-        # Paramètres de "Tuile"
-        # On force un espace (gap) d'au moins 1 ou 2 pixels
+        ## Paramètres de "Tuile" ##
+        ## On force un gap d'au moins 1 ou 2 pixels ##
         gap = max(1, cell_size // 10) 
         block_size = cell_size - gap
         
-        # Si la case est trop petite (<4px), on dessine juste des carrés simples pour la perf
+        ## Si la case est trop petite (<4px), on dessine juste des carrés simples pour la perf ##
         simple_mode = block_size < 4
 
         def draw_3d_block(x, y, palette, is_fire=False):
-            # Coordonnées pixel
+            ## Coordonnées pixel ##
             px = x * cell_size + (gap // 2)
             py = y * cell_size + (gap // 2)
             
@@ -111,13 +112,13 @@ class Grid:
                 core_rect = pygame.Rect(px + offset, py + offset, core_size, core_size)
                 pygame.draw.rect(screen, FIRE_CORE, core_rect, border_radius=2)
 
-        # DESSIN ARBRES
+        ## DESSIN ARBRES ##
         for (x, y) in self.__alive_trees:
-            # On récupère la nuance attribuée à cet arbre
+            ## On récupère la nuance attribuée à cet arbre ##
             shade_index = self.__tree_shades.get((x, y), 0)
             draw_3d_block(x, y, TREE_PALETTES[shade_index])
 
-        # DESSIN FEU
+        ## DESSIN FEU ##
         fire_palette = {'face': FIRE_FACE, 'light': FIRE_LIGHT, 'dark': FIRE_DARK}
         for (x, y) in self.__burning_trees:
             draw_3d_block(x, y, fire_palette, is_fire=True)
@@ -128,22 +129,22 @@ class Grid:
         new_alive_trees = set()
         new_no_trees = set()
 
-        # Pousse
+        ## Pousse ##
         for (x, y) in self.__no_trees:
             if random.random() < args.tree_probability:
-                self.add_tree(x, y) # On utilise add_tree pour donner une couleur
+                self.add_tree(x, y) ## On utilise add_tree pour donner une couleur ##
                 new_alive_trees.add((x, y))
             else:
                 new_no_trees.add((x, y))
         
-        # Feu spontané
+        ## Feu spontané ##
         for (x, y) in self.__alive_trees:
             if random.random() < args.fire_probability:
                 new_burning_trees.add((x, y))
             else:
                 new_alive_trees.add((x, y))
         
-        # Propagation
+        ## Propagation ##
         for (x, y) in self.__burning_trees:
             new_no_trees.add((x, y))
             for dx in [-1, 0, 1]:
@@ -153,21 +154,21 @@ class Grid:
                     if neighbor in self.__alive_trees:
                         new_burning_trees.add(neighbor)
                         
-        # Nettoyage
+        ## Nettoyage ##
         new_alive_trees = new_alive_trees - new_burning_trees
         
-        # Mise à jour des sets
+        ## Mise à jour des sets ##
         self.__burning_trees = new_burning_trees
         self.__alive_trees = new_alive_trees
         self.__no_trees = new_no_trees
         
-        # IMPORTANT : Mettre à jour le dictionnaire des couleurs
-        # On garde les couleurs des arbres survivants, on jette les autres
+        ## IMPORTANT : Mettre à jour le dictionnaire des couleurs ##
+        ## On garde les couleurs des arbres survivants, on jette les autres ##
         new_shades = {}
         for pos in new_alive_trees:
             if pos in self.__tree_shades:
                 new_shades[pos] = self.__tree_shades[pos]
             else:
-                # Au cas où un arbre apparait sans couleur (ne devrait pas arriver avec add_tree)
+                ## Au cas où un arbre apparait sans couleur (ne devrait pas arriver avec add_tree) ##
                 new_shades[pos] = random.randint(0, 2)
         self.__tree_shades = new_shades

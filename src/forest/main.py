@@ -1,12 +1,17 @@
 ## IMPORTATIONS ##
 import argparse
 import sys
+import logging
 
 ## IMPORTATIONS INTERNES ##
+
+## jsuis obligé de faire ca sinon parfois ca marche pas ##
 try:
     from .simulation import Grid
 except ImportError:
     from simulation import Grid 
+
+
 
 def start_simulation(args):
     grid = Grid(args.grid_size, args.grid_size, args)
@@ -21,11 +26,11 @@ def start_simulation(args):
         
         pygame.init()
         
-        # On vise une grande fenêtre pour bien voir les détails
+        ## On vise une grande fenêtre pour bien voir les détails ##
         TARGET_WINDOW_SIZE = 900 
         cell_size = TARGET_WINDOW_SIZE // args.grid_size
         
-        # Ajustement : On veut au moins 10 pixels par case pour voir l'effet 3D
+        ## Ajustement : On veut au moins 10 pixels par case pour voir l'effet 3D ##
         if cell_size < 10:
             print("ATTENTION: Grille trop dense, l'effet 3D sera désactivé.")
         
@@ -72,15 +77,11 @@ def main() -> None:
     parser.add_argument('-f', '--fire-probability', type=float, default=0.001)
     parser.add_argument('-p', '--tree-probability', type=float, default=0.05)
     
-    # J'ai réduit la taille par défaut de la grille à 30 pour que les tuiles soient GROSSES et belles
     parser.add_argument('-N', '--grid-size', type=int, default=30, help='Taille de la grille')
     
     parser.add_argument('-n', '--nb-steps', type=int, default=50)
     parser.add_argument('-x', '--gui', action='store_true', help='Activer mode graphique')
-    parser.add_argument('--fps', type=int, default=10, help='Vitesse') # Ralenti un peu pour admirer
+    parser.add_argument('--fps', type=int, default=10, help='Vitesse') 
     
     args = parser.parse_args()
     start_simulation(args)
-
-if __name__ == "__main__":
-    main()
