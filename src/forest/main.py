@@ -1,6 +1,5 @@
 ## IMPORTATIONS ##
 import argparse
-import sys
 import logging
 
 ## IMPORTATIONS INTERNES ##
@@ -11,18 +10,40 @@ try:
 except ImportError:
     from simulation import Grid 
 
+## CONFIGURATION DU LOGGING ##
+def setup_logging():
+    ## On récupère le logger racine ##
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG) 
 
+    ## Format : Date - Nom du module - Niveau - Message ##
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    ## Handler Console : On affiche INFO et plus ##
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO) 
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    ## Handler Fichier : On enregistre TOUT (DEBUG) ##
+    file_handler = logging.FileHandler('simulation.log', mode='w')
+    file_handler.setLevel(logging.DEBUG) 
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+## Logger nommé explicitement pour le script principal ##
+logger = logging.getLogger("MAIN")
 
 def start_simulation(args):
     grid = Grid(args.grid_size, args.grid_size, args)
     grid.save_to_file(args.start_grid_output)
     
-    print("État initial sauvegardé.")
+    logger.info("État initial sauvegardé.")
 
     ## MODE GRAPHIQUE ##
     if args.gui:
         import pygame
-        print("Lancement du mode GRAPHIQUE 3D. (ECHAP pour quitter)")
+        logger.info("Lancement du mode GRAPHIQUE 3D. (ECHAP pour quitter)")
         
         pygame.init()
         
@@ -32,7 +53,7 @@ def start_simulation(args):
         
         ## Ajustement : On veut au moins 10 pixels par case pour voir l'effet 3D ##
         if cell_size < 10:
-            print("ATTENTION: Grille trop dense, l'effet 3D sera désactivé.")
+            logger.warning("ATTENTION: Grille trop dense, l'effet 3D sera désactivé.")
         
         real_window_size = cell_size * args.grid_size 
         
@@ -56,20 +77,23 @@ def start_simulation(args):
             clock.tick(args.fps)
             
         pygame.quit()
-        print("Simulation graphique terminée.")
+        logger.info("Simulation graphique terminée.")
 
     ## MODE TEXTE ##
     else:
-        print(f"Lancement simulation textuelle ({args.nb_steps} étapes)...")
+        logger.info(f"Lancement simulation textuelle ({args.nb_steps} étapes)...")
         for i in range(args.nb_steps):
             grid.evolve(args)
             if i % 10 == 0:
-                print(f"Étape {i}/{args.nb_steps}")
+                logger.info(f"Étape {i}/{args.nb_steps}")
                 
     grid.save_to_file(args.output)
-    print(f"Sauvegarde finale : {args.output}")
+    logger.info(f"Sauvegarde finale : {args.output}")
 
 def main() -> None:
+    ## Initialisation du logging ##
+    setup_logging()
+
     parser = argparse.ArgumentParser(description="Simulation of a forest fire")
     parser.add_argument('-t', '--nbtrees', type=int, default=100)
     parser.add_argument('-s', '--start-grid-output', type=str, default='start_grid.txt')

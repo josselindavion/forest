@@ -3,6 +3,9 @@ import random
 import pygame
 import logging
 
+## Récupération du logger du module ##
+logger = logging.getLogger(__name__)
+
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
 
@@ -22,6 +25,8 @@ class Grid:
             x = random.randint(0, width - 1)
             y = random.randint(0, height - 1)
             self.add_tree(x, y)
+        
+        logger.debug(f"Grille initialisée : {width}x{height} avec {len(self.__alive_trees)} arbres.")
         
         ## Remplir le set des cases vides ##
         for y in range(height):
@@ -46,25 +51,26 @@ class Grid:
                     else:
                         line += ' '
                 file.write(line + '\n')
+        logger.debug(f"Fichier {filename} généré.")
 
     ## --- RENDU GRAPHIQUE 3D --- ##
     def draw(self, screen, cell_size):
-        # CONFIGURATION DES COULEURS
-        BG_COLOR = (30, 25, 25) # Sol très foncé
+        ## CONFIGURATION DES COULEURS ##
+        BG_COLOR = (30, 25, 25) ## Sol très foncé ##
         
-        # Nuances d'arbres (Top, Face, Ombre)
-        # On définit 3 types d'arbres pour varier la forêt
+        ## Nuances d'arbres (Top, Face, Ombre) ##
+        ## On définit 3 types d'arbres pour varier la forêt ##
         TREE_PALETTES = [
-            {'face': (34, 139, 34), 'light': (60, 179, 60), 'dark': (20, 80, 20)},  # Forest Green
-            {'face': (46, 139, 87), 'light': (70, 180, 110), 'dark': (25, 80, 50)}, # Sea Green
-            {'face': (0, 128, 0),   'light': (50, 160, 50),  'dark': (0, 70, 0)}    # Dark Green
+            {'face': (34, 139, 34), 'light': (60, 179, 60), 'dark': (20, 80, 20)},  ## Forest Green ##
+            {'face': (46, 139, 87), 'light': (70, 180, 110), 'dark': (25, 80, 50)}, ## Sea Green ##
+            {'face': (0, 128, 0),   'light': (50, 160, 50),  'dark': (0, 70, 0)}    ## Dark Green ##
         ]
 
-        # Couleurs du Feu (Jaune au centre, Rouge autour)
-        FIRE_FACE = (255, 69, 0)   # Rouge orange
-        FIRE_LIGHT = (255, 140, 0) # Orange clair
-        FIRE_DARK = (139, 0, 0)    # Rouge sang
-        FIRE_CORE = (255, 255, 0)  # Jaune pur
+        ## Couleurs du Feu (Jaune au centre, Rouge autour) ##
+        FIRE_FACE = (255, 69, 0)   ## Rouge orange ##
+        FIRE_LIGHT = (255, 140, 0) ## Orange clair ##
+        FIRE_DARK = (139, 0, 0)    ## Rouge sang ##
+        FIRE_CORE = (255, 255, 0)  ## Jaune pur ##
         
         screen.fill(BG_COLOR)
 
@@ -87,25 +93,25 @@ class Grid:
                 pygame.draw.rect(screen, palette['face'], rect)
                 return
 
-            # 1. OMBRE PORTÉE (Décalage en bas à droite sur le sol)
-            # On dessine un rectangle noir transparent (simulé par une couleur sombre du sol)
+            ## 1. OMBRE PORTÉE (Décalage en bas à droite sur le sol) ##
+            ## On dessine un rectangle noir transparent (simulé par une couleur sombre du sol) ##
             shadow_offset = max(2, block_size // 5)
             shadow_rect = pygame.Rect(px + shadow_offset//2, py + shadow_offset//2, block_size, block_size)
             pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
 
-            # 2. FACE PRINCIPALE (Le corps du bloc)
+            ## 2. FACE PRINCIPALE (Le corps du bloc) ##
             pygame.draw.rect(screen, palette['face'], rect, border_radius=3)
 
-            # 3. RELIEF (Bevel) - Effet lumière en haut/gauche
-            # On dessine une ligne ou un rect partiel pour simuler la lumière
-            highlight_rect = pygame.Rect(px, py, block_size, block_size // 4) # Bandeau haut
+            ## 3. RELIEF (Bevel) - Effet lumière en haut/gauche ##
+            ## On dessine une ligne ou un rect partiel pour simuler la lumière ##
+            highlight_rect = pygame.Rect(px, py, block_size, block_size // 4) ## Bandeau haut ##
             pygame.draw.rect(screen, palette['light'], highlight_rect, border_top_left_radius=3, border_top_right_radius=3)
 
-            # 4. RELIEF (Bevel) - Effet ombre en bas
+            ## 4. RELIEF (Bevel) - Effet ombre en bas ##
             shadow_bottom_rect = pygame.Rect(px, py + block_size - (block_size // 4), block_size, block_size // 4)
             pygame.draw.rect(screen, palette['dark'], shadow_bottom_rect, border_bottom_left_radius=3, border_bottom_right_radius=3)
 
-            # 5. COEUR DU FEU (Animation simple)
+            ## 5. COEUR DU FEU (Animation simple) ##
             if is_fire:
                 core_size = block_size // 2
                 offset = (block_size - core_size) // 2
@@ -153,6 +159,9 @@ class Grid:
                     neighbor = (x + dx, y + dy)
                     if neighbor in self.__alive_trees:
                         new_burning_trees.add(neighbor)
+        
+        if len(new_burning_trees) > 0:
+            logger.debug(f"Evolution : {len(new_burning_trees)} arbres en feu.")
                         
         ## Nettoyage ##
         new_alive_trees = new_alive_trees - new_burning_trees
