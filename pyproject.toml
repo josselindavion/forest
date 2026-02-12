@@ -14,7 +14,6 @@ dependencies = [
 [project.scripts]
 forest = "forest.main:main"
 
-## AJOUT DES DEPENDANCES DE DEV (TESTS, LINTING, TYPAGE) ##
 [dependency-groups]
 dev = [
     "mypy>=1.0.0",
@@ -34,8 +33,6 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["ALL"]
-
-## ON IGNORE CERTAINES REGLES POUR ACCEPTER TON STYLE ET EVITER LES CONFLITS ##
 ignore = [
     "E266",    ## Autorise les commentaires avec ## ##
     "E265",    ## Autorise les commentaires sans espace après le # ##
@@ -49,7 +46,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "D", "ANN", "SLF001"]
+"src/forest/tests/*" = ["S101", "D", "ANN", "SLF001"]
 
 ## CONFIGURATION MYPY (TYPAGE) ##
 [tool.mypy]
@@ -57,8 +54,13 @@ python_version = "3.13"
 strict = true
 ignore_missing_imports = true
 disallow_untyped_defs = true
+mypy_path = "src"
 
 ## CONFIGURATION PYTEST ##
 [tool.pytest.ini_options]
-addopts = "--cov=forest --cov-report=term-missing"
-testpaths = ["tests"]
+# On ajoute 'src' au PYTHONPATH pour que pytest trouve ton module 'forest'
+pythonpath = ["src"]
+# On dit à coverage de regarder dans 'src/forest'
+addopts = "--cov=src/forest --cov-report=term-missing"
+# On dit à pytest où sont les tests
+testpaths = ["src/forest/tests"]
