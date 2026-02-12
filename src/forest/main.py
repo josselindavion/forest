@@ -1,6 +1,8 @@
 ## IMPORTATIONS ##
 import argparse
 import logging
+## AJOUT TYPAGE ##
+from argparse import Namespace
 
 ## IMPORTATIONS INTERNES ##
 
@@ -8,10 +10,13 @@ import logging
 try:
     from .simulation import Grid
 except ImportError:
-    from simulation import Grid 
+    from simulation import Grid  ## type: ignore
 
 ## CONFIGURATION DU LOGGING ##
-def setup_logging():
+def setup_logging() -> None:
+    """
+    Configure le logging.
+    """
     ## On récupère le logger racine ##
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG) 
@@ -34,7 +39,10 @@ def setup_logging():
 ## Logger nommé explicitement pour le script principal ##
 logger = logging.getLogger("MAIN")
 
-def start_simulation(args):
+def start_simulation(args: Namespace) -> None:
+    """
+    Lance la simulation.
+    """
     grid = Grid(args.grid_size, args.grid_size, args)
     grid.save_to_file(args.start_grid_output)
     
@@ -91,6 +99,9 @@ def start_simulation(args):
     logger.info(f"Sauvegarde finale : {args.output}")
 
 def main() -> None:
+    """
+    Fonction principale.
+    """
     ## Initialisation du logging ##
     setup_logging()
 

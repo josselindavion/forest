@@ -2,22 +2,36 @@
 import random
 import pygame
 import logging
+## AJOUT POUR LE TYPAGE ##
+from typing import Set, Tuple, Dict, Any
+from argparse import Namespace
 
 ## Récupération du logger du module ##
 logger = logging.getLogger(__name__)
 
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
+    """
+    Classe gérant la grille de simulation, les arbres et le feu.
+    """
 
-    def __init__(self, height, width, args):
-        self.__burning_trees = set()
-        self.__alive_trees = set()
-        self.__no_trees = set()
-        self.__height = height
-        self.__width = width
+    def __init__(self, height: int, width: int, args: Namespace) -> None:
+        """
+        Initialise la grille.
+
+        Args:
+            height (int): Hauteur.
+            width (int): Largeur.
+            args (Namespace): Arguments du programme.
+        """
+        self.__burning_trees: Set[Tuple[int, int]] = set()
+        self.__alive_trees: Set[Tuple[int, int]] = set()
+        self.__no_trees: Set[Tuple[int, int]] = set()
+        self.__height: int = height
+        self.__width: int = width
         
         ## Dictionnaire pour stocker une variation de couleur par arbre (pour que ce soit moins monotone) ##
-        self.__tree_shades = {} 
+        self.__tree_shades: Dict[Tuple[int, int], int] = {} 
         
         ## Initialisation de la grille ##
         tree_number = args.nbtrees
@@ -34,12 +48,18 @@ class Grid:
                 if (x, y) not in self.__alive_trees:
                     self.__no_trees.add((x, y))
 
-    def add_tree(self, x, y):
+    def add_tree(self, x: int, y: int) -> None:
+        """
+        Ajoute un arbre à la position x, y.
+        """
         self.__alive_trees.add((x, y))
         ## On assigne une nuance de vert aléatoire à cet arbre (entre 0 et 3) ##
         self.__tree_shades[(x, y)] = random.randint(0, 2)
 
-    def save_to_file(self, filename):
+    def save_to_file(self, filename: str) -> None:
+        """
+        Sauvegarde la grille dans un fichier texte.
+        """
         with open(filename, 'w') as file:
             for y in range(self.__height):
                 line = ''
@@ -54,7 +74,10 @@ class Grid:
         logger.debug(f"Fichier {filename} généré.")
 
     ## --- RENDU GRAPHIQUE 3D --- ##
-    def draw(self, screen, cell_size):
+    def draw(self, screen: Any, cell_size: int) -> None:
+        """
+        Dessine la grille sur l'écran.
+        """
         ## CONFIGURATION DES COULEURS ##
         BG_COLOR = (30, 25, 25) ## Sol très foncé ##
         
@@ -82,7 +105,8 @@ class Grid:
         ## Si la case est trop petite (<4px), on dessine juste des carrés simples pour la perf ##
         simple_mode = block_size < 4
 
-        def draw_3d_block(x, y, palette, is_fire=False):
+        def draw_3d_block(x: int, y: int, palette: Dict[str, Any], is_fire: bool = False) -> None:
+            """Fonction interne pour dessiner un bloc."""
             ## Coordonnées pixel ##
             px = x * cell_size + (gap // 2)
             py = y * cell_size + (gap // 2)
@@ -130,7 +154,10 @@ class Grid:
             draw_3d_block(x, y, fire_palette, is_fire=True)
 
     ## EVOLUTION (Logique standard) ##
-    def evolve(self, args):
+    def evolve(self, args: Namespace) -> None:
+        """
+        Calcule l'étape suivante.
+        """
         new_burning_trees = set()
         new_alive_trees = set()
         new_no_trees = set()

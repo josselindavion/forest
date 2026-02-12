@@ -1,7 +1,7 @@
 [project]
 name = "forest"
 version = "0.1.0"
-description = "Add your description here"
+description = "Simulation de feux de forêt"
 readme = "README.md"
 authors = [
     { name = "Josselin Davion Jouffre", email = "josselin.davion--jouffre@etu.minesparis.psl.eu" }
@@ -14,6 +14,52 @@ dependencies = [
 [project.scripts]
 forest = "forest.main:main"
 
+## AJOUT DES DEPENDANCES DE DEV (TESTS, LINTING, TYPAGE) ##
+[dependency-groups]
+dev = [
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "types-pygame",
+]
+
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
+
+## CONFIGURATION RUFF (LINTING) ##
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+## ON IGNORE CERTAINES REGLES POUR ACCEPTER TON STYLE ET EVITER LES CONFLITS ##
+ignore = [
+    "E266",    ## Autorise les commentaires avec ## ##
+    "E265",    ## Autorise les commentaires sans espace après le # ##
+    "D203",    ## Conflit de docstring ##
+    "D213",    ## Conflit de docstring ##
+    "ANN101",  ## Ignore le type de 'self' ##
+    "S311",    ## Autorise random (pas de crypto) ##
+    "T201",    ## Autorise print si besoin ##
+    "COM812",  ## Conflit formatage ##
+    "ISC001",  ## Conflit formatage ##
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D", "ANN", "SLF001"]
+
+## CONFIGURATION MYPY (TYPAGE) ##
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
+disallow_untyped_defs = true
+
+## CONFIGURATION PYTEST ##
+[tool.pytest.ini_options]
+addopts = "--cov=forest --cov-report=term-missing"
+testpaths = ["tests"]
