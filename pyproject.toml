@@ -56,11 +56,14 @@ ignore_missing_imports = true
 disallow_untyped_defs = true
 mypy_path = "src"
 
+## EXCEPTION POUR LES TESTS (On ne veut pas typer les tests) ##
+[[tool.mypy.overrides]]
+module = "forest.tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
 ## CONFIGURATION PYTEST ##
 [tool.pytest.ini_options]
-# On ajoute 'src' au PYTHONPATH pour que pytest trouve ton module 'forest'
 pythonpath = ["src"]
-# On dit à coverage de regarder dans 'src/forest'
 addopts = "--cov=src/forest --cov-report=term-missing"
-# On dit à pytest où sont les tests
 testpaths = ["src/forest/tests"]
