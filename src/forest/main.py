@@ -10,7 +10,7 @@ from argparse import Namespace
 try:
     from .simulation import Grid
 except ImportError:
-    from simulation import Grid  ## type: ignore
+    from simulation import Grid  ## type: ignore[no-redef]
 
 ## CONFIGURATION DU LOGGING ##
 def setup_logging() -> None:
