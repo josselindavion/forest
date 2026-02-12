@@ -40,6 +40,19 @@ def test_add_tree(args):
     grid.add_tree(5, 5)
     assert (5, 5) in grid._Grid__alive_trees
 
+def test_save_to_file(args, tmp_path):
+    """Vérifie que la sauvegarde fichier fonctionne."""
+    ## tmp_path est une fixture pytest qui crée un dossier temporaire auto-nettoyé ##
+    file_path = tmp_path / "output_test.txt"
+    
+    grid = Grid(10, 10, args)
+    grid.save_to_file(str(file_path))
+    
+    assert file_path.exists()
+    ## On vérifie qu'il y a bien du contenu ##
+    content = file_path.read_text(encoding="utf-8")
+    assert len(content) > 0
+
 def test_evolve(args):
     """Vérifie que la simulation avance sans planter."""
     grid = Grid(10, 10, args)
