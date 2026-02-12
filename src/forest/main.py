@@ -7,10 +7,7 @@ from argparse import Namespace
 ## IMPORTATIONS INTERNES ##
 
 ## jsuis obligé de faire ca sinon parfois ca marche pas ##
-try:
-    from .simulation import Grid
-except ImportError:
-    from simulation import Grid  ## type: ignore[no-redef]
+from .simulation import Grid
 
 ## CONFIGURATION DU LOGGING ##
 def setup_logging() -> None:
