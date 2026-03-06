@@ -1,0 +1,1 @@
+"""Package principal pour la simulation de feu de forêt."""

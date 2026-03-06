@@ -1,15 +1,11 @@
-import pytest
+"""Tests pour le module de simulation (Grid)."""
+
 from argparse import Namespace
-import os
-import sys
 
-## Ajout du chemin parent pour importer les modules ##
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pytest
 
-try:
-    from simulation import Grid
-except ImportError:
-    from forest.simulation import Grid
+from forest.simulation import Grid
+
 
 @pytest.fixture
 def args():
@@ -23,40 +19,51 @@ def args():
         output="test_final.txt",
         nb_steps=5,
         gui=False,
-        fps=60
+        fps=60,
     )
+
 
 def test_grid_initialization(args):
     """Vérifie que la grille s'initialise correctement."""
-    grid = Grid(10, 10, args)
-    ## Vérification via accès privé (autorisé dans les tests via ruff config) ##
-    assert len(grid._Grid__alive_trees) == 10
-    assert grid._Grid__height == 10
+    grid_height = 10
+    grid_width = 10
+    expected_trees = 10
+
+    grid = Grid(grid_height, grid_width, args)
+
+    # Vérification via accès privé (autorisé dans les tests via ruff config)
+    assert len(grid._Grid__alive_trees) == expected_trees
+    assert grid._Grid__height == grid_height
+
 
 def test_add_tree(args):
     """Vérifie l'ajout manuel d'un arbre."""
     grid = Grid(10, 10, args)
     grid._Grid__alive_trees.clear()
-    grid.add_tree(5, 5)
-    assert (5, 5) in grid._Grid__alive_trees
+
+    test_x = 5
+    test_y = 5
+    grid.add_tree(test_x, test_y)
+
+    assert (test_x, test_y) in grid._Grid__alive_trees
+
 
 def test_save_to_file(args, tmp_path):
     """Vérifie que la sauvegarde fichier fonctionne."""
-    ## tmp_path est une fixture pytest qui crée un dossier temporaire auto-nettoyé ##
+    # tmp_path est une fixture pytest qui crée un dossier temporaire auto-nettoyé
     file_path = tmp_path / "output_test.txt"
-    
+
     grid = Grid(10, 10, args)
     grid.save_to_file(str(file_path))
-    
+
     assert file_path.exists()
-    ## On vérifie qu'il y a bien du contenu ##
+    # On vérifie qu'il y a bien du contenu
     content = file_path.read_text(encoding="utf-8")
     assert len(content) > 0
+
 
 def test_evolve(args):
     """Vérifie que la simulation avance sans planter."""
     grid = Grid(10, 10, args)
-    try:
-        grid.evolve(args)
-    except Exception as e:
-        pytest.fail(f"Evolve a planté : {e}")
+    # Si evolve lève une erreur, pytest fera échouer le test automatiquement
+    grid.evolve(args)

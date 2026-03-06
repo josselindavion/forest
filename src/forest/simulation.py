@@ -1,210 +1,252 @@
-## IMPORTATIONS NECESSAIRES ##
-import random
-import pygame
-import logging
-## AJOUT POUR LE TYPAGE ##
-from typing import Set, Tuple, Dict, Any
-from argparse import Namespace
+"""Module gérant la logique de la grille et des entités de la simulation."""
 
-## Récupération du logger du module ##
+# IMPORTATIONS NECESSAIRES
+import logging
+import random
+from argparse import Namespace
+from pathlib import Path
+from typing import ClassVar
+
+import pygame
+
+# Récupération du logger du module
 logger = logging.getLogger(__name__)
 
-## CLASSE DE LA GRILLE PRINCIPALE ##
+# --- NOUVELLES CLASSES POUR L'ISSUE 14 ---
+
+
+class Block:
+    """Classe de base pour dessiner une case en 3D."""
+
+    def __init__(self, x: int, y: int, cell_size: int, palette: dict[str, tuple[int, int, int]]) -> None:
+        """Initialise le bloc de base."""
+        self.x = x
+        self.y = y
+        self.cell_size = cell_size
+        self.palette = palette
+        self.gap = max(1, cell_size // 10)
+        self.block_size = cell_size - self.gap
+
+        min_block_size = 4
+        self.simple_mode = self.block_size < min_block_size
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Dessine le bloc sur l'écran."""
+        px = self.x * self.cell_size + (self.gap // 2)
+        py = self.y * self.cell_size + (self.gap // 2)
+        rect = pygame.Rect(px, py, self.block_size, self.block_size)
+
+        if self.simple_mode:
+            pygame.draw.rect(screen, self.palette["face"], rect)
+            return
+
+        # 1. OMBRE PORTÉE
+        shadow_offset = max(2, self.block_size // 5)
+        shadow_rect = pygame.Rect(
+            px + shadow_offset // 2,
+            py + shadow_offset // 2,
+            self.block_size,
+            self.block_size
+        )
+        pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
+
+        # 2. FACE PRINCIPALE
+        pygame.draw.rect(screen, self.palette["face"], rect, border_radius=3)
+
+        # 3. RELIEF HAUT
+        highlight_rect = pygame.Rect(px, py, self.block_size, self.block_size // 4)
+        pygame.draw.rect(
+            screen,
+            self.palette["light"],
+            highlight_rect,
+            border_top_left_radius=3,
+            border_top_right_radius=3
+        )
+
+        # 4. RELIEF BAS
+        shadow_bottom_rect = pygame.Rect(
+            px,
+            py + self.block_size - (self.block_size // 4),
+            self.block_size,
+            self.block_size // 4
+        )
+        pygame.draw.rect(
+            screen,
+            self.palette["dark"],
+            shadow_bottom_rect,
+            border_bottom_left_radius=3,
+            border_bottom_right_radius=3
+        )
+
+
+class TreeBlock(Block):
+    """Bloc représentant un arbre."""
+
+    TREE_PALETTES: ClassVar[list[dict[str, tuple[int, int, int]]]] = [
+        {"face": (34, 139, 34), "light": (60, 179, 60), "dark": (20, 80, 20)},
+        {"face": (46, 139, 87), "light": (70, 180, 110), "dark": (25, 80, 50)},
+        {"face": (0, 128, 0), "light": (50, 160, 50), "dark": (0, 70, 0)},
+    ]
+
+    def __init__(self, x: int, y: int, cell_size: int, shade_index: int) -> None:
+        """Initialise le bloc arbre."""
+        super().__init__(x, y, cell_size, self.TREE_PALETTES[shade_index])
+
+
+class FireBlock(Block):
+    """Bloc représentant un feu avec son cœur jaune."""
+
+    FIRE_PALETTE: ClassVar[dict[str, tuple[int, int, int]]] = {
+        "face": (255, 69, 0),
+        "light": (255, 140, 0),
+        "dark": (139, 0, 0),
+    }
+    FIRE_CORE: ClassVar[tuple[int, int, int]] = (255, 255, 0)
+
+    def __init__(self, x: int, y: int, cell_size: int) -> None:
+        """Initialise le bloc feu."""
+        super().__init__(x, y, cell_size, self.FIRE_PALETTE)
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Dessine le bloc en feu."""
+        # On dessine la base du bloc d'abord
+        super().draw(screen)
+        # Puis on ajoute le cœur de feu spécifique
+        if not self.simple_mode:
+            px = self.x * self.cell_size + (self.gap // 2)
+            py = self.y * self.cell_size + (self.gap // 2)
+            core_size = self.block_size // 2
+            offset = (self.block_size - core_size) // 2
+            core_rect = pygame.Rect(px + offset, py + offset, core_size, core_size)
+            pygame.draw.rect(screen, self.FIRE_CORE, core_rect, border_radius=2)
+
+
+# CLASSE DE LA GRILLE PRINCIPALE
 class Grid:
-    """
-    Classe gérant la grille de simulation, les arbres et le feu.
-    """
+    """Classe gérant la grille de simulation, les arbres et le feu."""
 
     def __init__(self, height: int, width: int, args: Namespace) -> None:
-        """
-        Initialise la grille.
+        """Initialise la grille.
 
         Args:
             height (int): Hauteur.
             width (int): Largeur.
             args (Namespace): Arguments du programme.
+
         """
-        self.__burning_trees: Set[Tuple[int, int]] = set()
-        self.__alive_trees: Set[Tuple[int, int]] = set()
-        self.__no_trees: Set[Tuple[int, int]] = set()
+        self.__burning_trees: set[tuple[int, int]] = set()
+        self.__alive_trees: set[tuple[int, int]] = set()
+        self.__no_trees: set[tuple[int, int]] = set()
         self.__height: int = height
         self.__width: int = width
-        
-        ## Dictionnaire pour stocker une variation de couleur par arbre (pour que ce soit moins monotone) ##
-        self.__tree_shades: Dict[Tuple[int, int], int] = {} 
-        
-        ## Initialisation de la grille ##
+
+        # Dictionnaire pour stocker une variation de couleur par arbre
+        self.__tree_shades: dict[tuple[int, int], int] = {}
+
+        # Initialisation de la grille
         tree_number = args.nbtrees
         while len(self.__alive_trees) < tree_number:
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
+            x = random.randint(0, width - 1)  # noqa: S311
+            y = random.randint(0, height - 1)  # noqa: S311
             self.add_tree(x, y)
-        
-        logger.debug(f"Grille initialisée : {width}x{height} avec {len(self.__alive_trees)} arbres.")
-        
-        ## Remplir le set des cases vides ##
+
+        logger.debug("Grille initialisée : %dx%d avec %d arbres.", width, height, len(self.__alive_trees))
+
+        # Remplir le set des cases vides
         for y in range(height):
             for x in range(width):
                 if (x, y) not in self.__alive_trees:
                     self.__no_trees.add((x, y))
 
     def add_tree(self, x: int, y: int) -> None:
-        """
-        Ajoute un arbre à la position x, y.
-        """
+        """Ajoute un arbre à la position x, y."""
         self.__alive_trees.add((x, y))
-        ## On assigne une nuance de vert aléatoire à cet arbre (entre 0 et 3) ##
-        self.__tree_shades[(x, y)] = random.randint(0, 2)
+        # On assigne une nuance de vert aléatoire à cet arbre (entre 0 et 3)
+        self.__tree_shades[(x, y)] = random.randint(0, 2)  # noqa: S311
 
     def save_to_file(self, filename: str) -> None:
-        """
-        Sauvegarde la grille dans un fichier texte.
-        """
-        with open(filename, 'w') as file:
+        """Sauvegarde la grille dans un fichier texte."""
+        with Path(filename).open("w") as file:
             for y in range(self.__height):
-                line = ''
+                line = ""
                 for x in range(self.__width):
                     if (x, y) in self.__burning_trees:
-                        line += '*'
+                        line += "*"
                     elif (x, y) in self.__alive_trees:
-                        line += 'o'
+                        line += "o"
                     else:
-                        line += ' '
-                file.write(line + '\n')
-        logger.debug(f"Fichier {filename} généré.")
+                        line += " "
+                file.write(line + "\n")
+        logger.debug("Fichier %s généré.", filename)
 
-    ## --- RENDU GRAPHIQUE 3D --- ##
-    def draw(self, screen: Any, cell_size: int) -> None:
-        """
-        Dessine la grille sur l'écran.
-        """
-        ## CONFIGURATION DES COULEURS ##
-        BG_COLOR = (30, 25, 25) ## Sol très foncé ##
-        
-        ## Nuances d'arbres (Top, Face, Ombre) ##
-        ## On définit 3 types d'arbres pour varier la forêt ##
-        TREE_PALETTES = [
-            {'face': (34, 139, 34), 'light': (60, 179, 60), 'dark': (20, 80, 20)},  ## Forest Green ##
-            {'face': (46, 139, 87), 'light': (70, 180, 110), 'dark': (25, 80, 50)}, ## Sea Green ##
-            {'face': (0, 128, 0),   'light': (50, 160, 50),  'dark': (0, 70, 0)}    ## Dark Green ##
-        ]
+    # --- RENDU GRAPHIQUE 3D REFACTORISÉ ---
+    def draw(self, screen: pygame.Surface, cell_size: int) -> None:
+        """Dessine la grille sur l'écran en utilisant les classes Block."""
+        bg_color = (30, 25, 25)  # Sol très foncé
+        screen.fill(bg_color)
 
-        ## Couleurs du Feu (Jaune au centre, Rouge autour) ##
-        FIRE_FACE = (255, 69, 0)   ## Rouge orange ##
-        FIRE_LIGHT = (255, 140, 0) ## Orange clair ##
-        FIRE_DARK = (139, 0, 0)    ## Rouge sang ##
-        FIRE_CORE = (255, 255, 0)  ## Jaune pur ##
-        
-        screen.fill(BG_COLOR)
-
-        ## Paramètres de "Tuile" ##
-        ## On force un gap d'au moins 1 ou 2 pixels ##
-        gap = max(1, cell_size // 10) 
-        block_size = cell_size - gap
-        
-        ## Si la case est trop petite (<4px), on dessine juste des carrés simples pour la perf ##
-        simple_mode = block_size < 4
-
-        def draw_3d_block(x: int, y: int, palette: Dict[str, Any], is_fire: bool = False) -> None:
-            """Fonction interne pour dessiner un bloc."""
-            ## Coordonnées pixel ##
-            px = x * cell_size + (gap // 2)
-            py = y * cell_size + (gap // 2)
-            
-            rect = pygame.Rect(px, py, block_size, block_size)
-
-            if simple_mode:
-                pygame.draw.rect(screen, palette['face'], rect)
-                return
-
-            ## 1. OMBRE PORTÉE (Décalage en bas à droite sur le sol) ##
-            ## On dessine un rectangle noir transparent (simulé par une couleur sombre du sol) ##
-            shadow_offset = max(2, block_size // 5)
-            shadow_rect = pygame.Rect(px + shadow_offset//2, py + shadow_offset//2, block_size, block_size)
-            pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
-
-            ## 2. FACE PRINCIPALE (Le corps du bloc) ##
-            pygame.draw.rect(screen, palette['face'], rect, border_radius=3)
-
-            ## 3. RELIEF (Bevel) - Effet lumière en haut/gauche ##
-            ## On dessine une ligne ou un rect partiel pour simuler la lumière ##
-            highlight_rect = pygame.Rect(px, py, block_size, block_size // 4) ## Bandeau haut ##
-            pygame.draw.rect(screen, palette['light'], highlight_rect, border_top_left_radius=3, border_top_right_radius=3)
-
-            ## 4. RELIEF (Bevel) - Effet ombre en bas ##
-            shadow_bottom_rect = pygame.Rect(px, py + block_size - (block_size // 4), block_size, block_size // 4)
-            pygame.draw.rect(screen, palette['dark'], shadow_bottom_rect, border_bottom_left_radius=3, border_bottom_right_radius=3)
-
-            ## 5. COEUR DU FEU (Animation simple) ##
-            if is_fire:
-                core_size = block_size // 2
-                offset = (block_size - core_size) // 2
-                core_rect = pygame.Rect(px + offset, py + offset, core_size, core_size)
-                pygame.draw.rect(screen, FIRE_CORE, core_rect, border_radius=2)
-
-        ## DESSIN ARBRES ##
-        for (x, y) in self.__alive_trees:
-            ## On récupère la nuance attribuée à cet arbre ##
+        # DESSIN ARBRES
+        for x, y in self.__alive_trees:
             shade_index = self.__tree_shades.get((x, y), 0)
-            draw_3d_block(x, y, TREE_PALETTES[shade_index])
+            tree = TreeBlock(x, y, cell_size, shade_index)
+            tree.draw(screen)
 
-        ## DESSIN FEU ##
-        fire_palette = {'face': FIRE_FACE, 'light': FIRE_LIGHT, 'dark': FIRE_DARK}
-        for (x, y) in self.__burning_trees:
-            draw_3d_block(x, y, fire_palette, is_fire=True)
+        # DESSIN FEU
+        for x, y in self.__burning_trees:
+            fire = FireBlock(x, y, cell_size)
+            fire.draw(screen)
 
-    ## EVOLUTION (Logique standard) ##
-    def evolve(self, args: Namespace) -> None:
-        """
-        Calcule l'étape suivante.
-        """
+    # EVOLUTION (Logique standard)
+    def evolve(self, args: Namespace) -> None:  # noqa: C901, PLR0912
+        """Calcule l'étape suivante."""  # noqa: D401
         new_burning_trees = set()
         new_alive_trees = set()
         new_no_trees = set()
 
-        ## Pousse ##
-        for (x, y) in self.__no_trees:
-            if random.random() < args.tree_probability:
-                self.add_tree(x, y) ## On utilise add_tree pour donner une couleur ##
+        # Pousse
+        for x, y in self.__no_trees:
+            if random.random() < args.tree_probability:  # noqa: S311
+                self.add_tree(x, y)  # On utilise add_tree pour donner une couleur
                 new_alive_trees.add((x, y))
             else:
                 new_no_trees.add((x, y))
-        
-        ## Feu spontané ##
-        for (x, y) in self.__alive_trees:
-            if random.random() < args.fire_probability:
+
+        # Feu spontané
+        for x, y in self.__alive_trees:
+            if random.random() < args.fire_probability:  # noqa: S311
                 new_burning_trees.add((x, y))
             else:
                 new_alive_trees.add((x, y))
-        
-        ## Propagation ##
-        for (x, y) in self.__burning_trees:
+
+        # Propagation
+        for x, y in self.__burning_trees:
             new_no_trees.add((x, y))
             for dx in [-1, 0, 1]:
                 for dy in [-1, 0, 1]:
-                    if dx == 0 and dy == 0: continue
+                    if dx == 0 and dy == 0:
+                        continue
                     neighbor = (x + dx, y + dy)
                     if neighbor in self.__alive_trees:
                         new_burning_trees.add(neighbor)
-        
+
         if len(new_burning_trees) > 0:
-            logger.debug(f"Evolution : {len(new_burning_trees)} arbres en feu.")
-                        
-        ## Nettoyage ##
+            logger.debug("Evolution : %d arbres en feu.", len(new_burning_trees))
+
+        # Nettoyage
         new_alive_trees = new_alive_trees - new_burning_trees
-        
-        ## Mise à jour des sets ##
+
+        # Mise à jour des sets
         self.__burning_trees = new_burning_trees
         self.__alive_trees = new_alive_trees
         self.__no_trees = new_no_trees
-        
-        ## IMPORTANT : Mettre à jour le dictionnaire des couleurs ##
-        ## On garde les couleurs des arbres survivants, on jette les autres ##
+
+        # IMPORTANT : Mettre à jour le dictionnaire des couleurs
+        # On garde les couleurs des arbres survivants, on jette les autres
         new_shades = {}
         for pos in new_alive_trees:
             if pos in self.__tree_shades:
                 new_shades[pos] = self.__tree_shades[pos]
             else:
-                ## Au cas où un arbre apparait sans couleur (ne devrait pas arriver avec add_tree) ##
-                new_shades[pos] = random.randint(0, 2)
+                # Au cas où un arbre apparait sans couleur (ne devrait pas arriver avec add_tree)
+                new_shades[pos] = random.randint(0, 2)  # noqa: S311
         self.__tree_shades = new_shades
