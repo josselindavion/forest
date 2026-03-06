@@ -1,39 +1,39 @@
-## IMPORTATIONS ##
+"""Module principal pour lancer la simulation de feu de forêt."""
+
+# IMPORTATIONS
 import argparse
 import logging
-## AJOUT TYPAGE ##
+# AJOUT TYPAGE
 from argparse import Namespace
 
-## IMPORTATIONS INTERNES ##
-
-## jsuis obligé de faire ca sinon parfois ca marche pas ##
+# IMPORTATIONS INTERNES
 from .simulation import Grid
 
-## CONFIGURATION DU LOGGING ##
+# CONFIGURATION DU LOGGING
 def setup_logging(verbose: bool = False) -> None:
     """
     Configure le logging.
     """
-    ## On récupère le logger racine ##
+    # On récupère le logger racine
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG) 
 
-    ## Format : Date - Nom du module - Niveau - Message ##
+    # Format : Date - Nom du module - Niveau - Message
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    ## Handler Console : On affiche INFO ou DEBUG selon l'option ##
+    # Handler Console : On affiche INFO ou DEBUG selon l'option
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.DEBUG if verbose else logging.INFO) 
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
-    ## Handler Fichier : On enregistre TOUT (DEBUG) ##
+    # Handler Fichier : On enregistre TOUT (DEBUG)
     file_handler = logging.FileHandler('simulation.log', mode='w')
     file_handler.setLevel(logging.DEBUG) 
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-## Logger nommé explicitement pour le script principal ##
+# Logger nommé explicitement pour le script principal
 logger = logging.getLogger("MAIN")
 
 def start_simulation(args: Namespace) -> None:
@@ -45,18 +45,18 @@ def start_simulation(args: Namespace) -> None:
     
     logger.info("État initial sauvegardé.")
 
-    ## MODE GRAPHIQUE ##
+    # MODE GRAPHIQUE
     if args.gui:
         import pygame
         logger.info("Lancement du mode GRAPHIQUE 3D. (ECHAP pour quitter)")
         
         pygame.init()
         
-        ## On vise une grande fenêtre pour bien voir les détails ##
+        # On vise une grande fenêtre pour bien voir les détails
         TARGET_WINDOW_SIZE = 900 
         cell_size = TARGET_WINDOW_SIZE // args.grid_size
         
-        ## Ajustement : On veut au moins 10 pixels par case pour voir l'effet 3D ##
+        # Ajustement : On veut au moins 10 pixels par case pour voir l'effet 3D
         if cell_size < 10:
             logger.warning("ATTENTION: Grille trop dense, l'effet 3D sera désactivé.")
         
@@ -72,9 +72,8 @@ def start_simulation(args: Namespace) -> None:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    running = False
             
             grid.evolve(args)
             grid.draw(screen, cell_size)
@@ -84,7 +83,7 @@ def start_simulation(args: Namespace) -> None:
         pygame.quit()
         logger.info("Simulation graphique terminée.")
 
-    ## MODE TEXTE ##
+    # MODE TEXTE
     else:
         logger.info(f"Lancement simulation textuelle ({args.nb_steps} étapes)...")
         for i in range(args.nb_steps):
@@ -112,12 +111,12 @@ def main() -> None:
     parser.add_argument('-x', '--gui', action='store_true', help='Activer mode graphique')
     parser.add_argument('--fps', type=int, default=10, help='Vitesse') 
     
-    ## NOUVEAU : Ajout de l'argument verbose ##
+    # NOUVEAU : Ajout de l'argument verbose
     parser.add_argument('-v', '--verbose', action='store_true', help='Activer les logs détaillés (DEBUG)')
     
     args = parser.parse_args()
     
-    ## Initialisation du logging avec le paramètre verbose ##
+    # Initialisation du logging avec le paramètre verbose
     setup_logging(args.verbose)
     
     start_simulation(args)
