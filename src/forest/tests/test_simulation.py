@@ -28,9 +28,9 @@ def test_grid_initialization(args):
     grid_height = 10
     grid_width = 10
     expected_trees = 10
-    
+
     grid = Grid(grid_height, grid_width, args)
-    
+
     # Vérification via accès privé (autorisé dans les tests via ruff config)
     assert len(grid._Grid__alive_trees) == expected_trees
     assert grid._Grid__height == grid_height
@@ -40,11 +40,11 @@ def test_add_tree(args):
     """Vérifie l'ajout manuel d'un arbre."""
     grid = Grid(10, 10, args)
     grid._Grid__alive_trees.clear()
-    
+
     test_x = 5
     test_y = 5
     grid.add_tree(test_x, test_y)
-    
+
     assert (test_x, test_y) in grid._Grid__alive_trees
 
 

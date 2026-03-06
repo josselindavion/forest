@@ -26,7 +26,7 @@ class Block:
         self.palette = palette
         self.gap = max(1, cell_size // 10)
         self.block_size = cell_size - self.gap
-        
+
         min_block_size = 4
         self.simple_mode = self.block_size < min_block_size
 
@@ -43,9 +43,9 @@ class Block:
         # 1. OMBRE PORTÉE
         shadow_offset = max(2, self.block_size // 5)
         shadow_rect = pygame.Rect(
-            px + shadow_offset // 2, 
-            py + shadow_offset // 2, 
-            self.block_size, 
+            px + shadow_offset // 2,
+            py + shadow_offset // 2,
+            self.block_size,
             self.block_size
         )
         pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
@@ -56,25 +56,25 @@ class Block:
         # 3. RELIEF HAUT
         highlight_rect = pygame.Rect(px, py, self.block_size, self.block_size // 4)
         pygame.draw.rect(
-            screen, 
-            self.palette["light"], 
-            highlight_rect, 
-            border_top_left_radius=3, 
+            screen,
+            self.palette["light"],
+            highlight_rect,
+            border_top_left_radius=3,
             border_top_right_radius=3
         )
 
         # 4. RELIEF BAS
         shadow_bottom_rect = pygame.Rect(
-            px, 
-            py + self.block_size - (self.block_size // 4), 
-            self.block_size, 
+            px,
+            py + self.block_size - (self.block_size // 4),
+            self.block_size,
             self.block_size // 4
         )
         pygame.draw.rect(
-            screen, 
-            self.palette["dark"], 
-            shadow_bottom_rect, 
-            border_bottom_left_radius=3, 
+            screen,
+            self.palette["dark"],
+            shadow_bottom_rect,
+            border_bottom_left_radius=3,
             border_bottom_right_radius=3
         )
 
