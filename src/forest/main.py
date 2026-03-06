@@ -10,7 +10,7 @@ from argparse import Namespace
 from .simulation import Grid
 
 ## CONFIGURATION DU LOGGING ##
-def setup_logging() -> None:
+def setup_logging(verbose: bool = False) -> None:
     """
     Configure le logging.
     """
@@ -21,9 +21,9 @@ def setup_logging() -> None:
     ## Format : Date - Nom du module - Niveau - Message ##
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    ## Handler Console : On affiche INFO et plus ##
+    ## Handler Console : On affiche INFO ou DEBUG selon l'option ##
     stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.INFO) 
+    stream_handler.setLevel(logging.DEBUG if verbose else logging.INFO) 
     stream_handler.setFormatter(formatter)
     logger.addHandler(stream_handler)
 
@@ -99,9 +99,6 @@ def main() -> None:
     """
     Fonction principale.
     """
-    ## Initialisation du logging ##
-    setup_logging()
-
     parser = argparse.ArgumentParser(description="Simulation of a forest fire")
     parser.add_argument('-t', '--nbtrees', type=int, default=100)
     parser.add_argument('-s', '--start-grid-output', type=str, default='start_grid.txt')
@@ -115,5 +112,12 @@ def main() -> None:
     parser.add_argument('-x', '--gui', action='store_true', help='Activer mode graphique')
     parser.add_argument('--fps', type=int, default=10, help='Vitesse') 
     
+    ## NOUVEAU : Ajout de l'argument verbose ##
+    parser.add_argument('-v', '--verbose', action='store_true', help='Activer les logs détaillés (DEBUG)')
+    
     args = parser.parse_args()
+    
+    ## Initialisation du logging avec le paramètre verbose ##
+    setup_logging(args.verbose)
+    
     start_simulation(args)
