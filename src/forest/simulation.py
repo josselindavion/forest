@@ -9,6 +9,77 @@ from argparse import Namespace
 ## Récupération du logger du module ##
 logger = logging.getLogger(__name__)
 
+## --- NOUVELLES CLASSES POUR L'ISSUE 14 --- ##
+
+class Block:
+    """Classe de base pour dessiner une case en 3D."""
+    def __init__(self, x: int, y: int, cell_size: int, palette: Dict[str, Any]):
+        self.x = x
+        self.y = y
+        self.cell_size = cell_size
+        self.palette = palette
+        self.gap = max(1, cell_size // 10)
+        self.block_size = cell_size - self.gap
+        self.simple_mode = self.block_size < 4
+
+    def draw(self, screen: Any) -> None:
+        px = self.x * self.cell_size + (self.gap // 2)
+        py = self.y * self.cell_size + (self.gap // 2)
+        rect = pygame.Rect(px, py, self.block_size, self.block_size)
+
+        if self.simple_mode:
+            pygame.draw.rect(screen, self.palette['face'], rect)
+            return
+
+        ## 1. OMBRE PORTÉE ##
+        shadow_offset = max(2, self.block_size // 5)
+        shadow_rect = pygame.Rect(px + shadow_offset//2, py + shadow_offset//2, self.block_size, self.block_size)
+        pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
+
+        ## 2. FACE PRINCIPALE ##
+        pygame.draw.rect(screen, self.palette['face'], rect, border_radius=3)
+
+        ## 3. RELIEF HAUT ##
+        highlight_rect = pygame.Rect(px, py, self.block_size, self.block_size // 4)
+        pygame.draw.rect(screen, self.palette['light'], highlight_rect, border_top_left_radius=3, border_top_right_radius=3)
+
+        ## 4. RELIEF BAS ##
+        shadow_bottom_rect = pygame.Rect(px, py + self.block_size - (self.block_size // 4), self.block_size, self.block_size // 4)
+        pygame.draw.rect(screen, self.palette['dark'], shadow_bottom_rect, border_bottom_left_radius=3, border_bottom_right_radius=3)
+
+class TreeBlock(Block):
+    """Bloc représentant un arbre."""
+    TREE_PALETTES = [
+        {'face': (34, 139, 34), 'light': (60, 179, 60), 'dark': (20, 80, 20)},
+        {'face': (46, 139, 87), 'light': (70, 180, 110), 'dark': (25, 80, 50)},
+        {'face': (0, 128, 0),   'light': (50, 160, 50),  'dark': (0, 70, 0)}
+    ]
+
+    def __init__(self, x: int, y: int, cell_size: int, shade_index: int):
+        super().__init__(x, y, cell_size, self.TREE_PALETTES[shade_index])
+
+class FireBlock(Block):
+    """Bloc représentant un feu avec son cœur jaune."""
+    FIRE_PALETTE = {'face': (255, 69, 0), 'light': (255, 140, 0), 'dark': (139, 0, 0)}
+    FIRE_CORE = (255, 255, 0)
+
+    def __init__(self, x: int, y: int, cell_size: int):
+        super().__init__(x, y, cell_size, self.FIRE_PALETTE)
+
+    def draw(self, screen: Any) -> None:
+        ## On dessine la base du bloc d'abord ##
+        super().draw(screen)
+        ## Puis on ajoute le cœur de feu spécifique ##
+        if not self.simple_mode:
+            px = self.x * self.cell_size + (self.gap // 2)
+            py = self.y * self.cell_size + (self.gap // 2)
+            core_size = self.block_size // 2
+            offset = (self.block_size - core_size) // 2
+            core_rect = pygame.Rect(px + offset, py + offset, core_size, core_size)
+            pygame.draw.rect(screen, self.FIRE_CORE, core_rect, border_radius=2)
+
+## --- FIN DES NOUVELLES CLASSES --- ##
+
 ## CLASSE DE LA GRILLE PRINCIPALE ##
 class Grid:
     """
@@ -73,85 +144,24 @@ class Grid:
                 file.write(line + '\n')
         logger.debug(f"Fichier {filename} généré.")
 
-    ## --- RENDU GRAPHIQUE 3D --- ##
+    ## --- RENDU GRAPHIQUE 3D REFACTORISÉ --- ##
     def draw(self, screen: Any, cell_size: int) -> None:
         """
-        Dessine la grille sur l'écran.
+        Dessine la grille sur l'écran en utilisant les classes Block.
         """
-        ## CONFIGURATION DES COULEURS ##
         BG_COLOR = (30, 25, 25) ## Sol très foncé ##
-        
-        ## Nuances d'arbres (Top, Face, Ombre) ##
-        ## On définit 3 types d'arbres pour varier la forêt ##
-        TREE_PALETTES = [
-            {'face': (34, 139, 34), 'light': (60, 179, 60), 'dark': (20, 80, 20)},  ## Forest Green ##
-            {'face': (46, 139, 87), 'light': (70, 180, 110), 'dark': (25, 80, 50)}, ## Sea Green ##
-            {'face': (0, 128, 0),   'light': (50, 160, 50),  'dark': (0, 70, 0)}    ## Dark Green ##
-        ]
-
-        ## Couleurs du Feu (Jaune au centre, Rouge autour) ##
-        FIRE_FACE = (255, 69, 0)   ## Rouge orange ##
-        FIRE_LIGHT = (255, 140, 0) ## Orange clair ##
-        FIRE_DARK = (139, 0, 0)    ## Rouge sang ##
-        FIRE_CORE = (255, 255, 0)  ## Jaune pur ##
-        
         screen.fill(BG_COLOR)
-
-        ## Paramètres de "Tuile" ##
-        ## On force un gap d'au moins 1 ou 2 pixels ##
-        gap = max(1, cell_size // 10) 
-        block_size = cell_size - gap
-        
-        ## Si la case est trop petite (<4px), on dessine juste des carrés simples pour la perf ##
-        simple_mode = block_size < 4
-
-        def draw_3d_block(x: int, y: int, palette: Dict[str, Any], is_fire: bool = False) -> None:
-            """Fonction interne pour dessiner un bloc."""
-            ## Coordonnées pixel ##
-            px = x * cell_size + (gap // 2)
-            py = y * cell_size + (gap // 2)
-            
-            rect = pygame.Rect(px, py, block_size, block_size)
-
-            if simple_mode:
-                pygame.draw.rect(screen, palette['face'], rect)
-                return
-
-            ## 1. OMBRE PORTÉE (Décalage en bas à droite sur le sol) ##
-            ## On dessine un rectangle noir transparent (simulé par une couleur sombre du sol) ##
-            shadow_offset = max(2, block_size // 5)
-            shadow_rect = pygame.Rect(px + shadow_offset//2, py + shadow_offset//2, block_size, block_size)
-            pygame.draw.rect(screen, (15, 10, 10), shadow_rect, border_radius=3)
-
-            ## 2. FACE PRINCIPALE (Le corps du bloc) ##
-            pygame.draw.rect(screen, palette['face'], rect, border_radius=3)
-
-            ## 3. RELIEF (Bevel) - Effet lumière en haut/gauche ##
-            ## On dessine une ligne ou un rect partiel pour simuler la lumière ##
-            highlight_rect = pygame.Rect(px, py, block_size, block_size // 4) ## Bandeau haut ##
-            pygame.draw.rect(screen, palette['light'], highlight_rect, border_top_left_radius=3, border_top_right_radius=3)
-
-            ## 4. RELIEF (Bevel) - Effet ombre en bas ##
-            shadow_bottom_rect = pygame.Rect(px, py + block_size - (block_size // 4), block_size, block_size // 4)
-            pygame.draw.rect(screen, palette['dark'], shadow_bottom_rect, border_bottom_left_radius=3, border_bottom_right_radius=3)
-
-            ## 5. COEUR DU FEU (Animation simple) ##
-            if is_fire:
-                core_size = block_size // 2
-                offset = (block_size - core_size) // 2
-                core_rect = pygame.Rect(px + offset, py + offset, core_size, core_size)
-                pygame.draw.rect(screen, FIRE_CORE, core_rect, border_radius=2)
 
         ## DESSIN ARBRES ##
         for (x, y) in self.__alive_trees:
-            ## On récupère la nuance attribuée à cet arbre ##
             shade_index = self.__tree_shades.get((x, y), 0)
-            draw_3d_block(x, y, TREE_PALETTES[shade_index])
+            tree = TreeBlock(x, y, cell_size, shade_index)
+            tree.draw(screen)
 
         ## DESSIN FEU ##
-        fire_palette = {'face': FIRE_FACE, 'light': FIRE_LIGHT, 'dark': FIRE_DARK}
         for (x, y) in self.__burning_trees:
-            draw_3d_block(x, y, fire_palette, is_fire=True)
+            fire = FireBlock(x, y, cell_size)
+            fire.draw(screen)
 
     ## EVOLUTION (Logique standard) ##
     def evolve(self, args: Namespace) -> None:
